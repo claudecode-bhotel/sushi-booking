@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Success - b hotel Sushi Experience</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Inter:wght@300;400;600&family=Noto+Serif+JP:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="navbar-content">
+                <div class="logo">
+                    <span class="logo-b">b</span> hotel
+                </div>
+                <button class="lang-toggle" id="langToggle">JP / EN</button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="payment-success-main">
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state">
+                <div class="spinner"></div>
+                <p class="loading-text" data-en="Confirming your booking..." data-jp="ãäºç´ãç¢ºèªä¸­...">Confirming your booking...</p>
+            </div>
+
+            <!-- Success State -->
+            <div id="successState" class="success-state" style="display: none;">
+                <div class="checkmark-icon">â</div>
+                <h1 class="success-title" data-en="Booking Confirmed!" data-jp="äºç´ç¢ºå®ï¼">Booking Confirmed!</h1>
+                <p class="success-subtitle" data-en="Thank you for booking the Dashi & Sushi Experience" data-jp="åºæ±ã¨å¯¿å¸ä½é¨ã®ãäºç´ãããã¨ããããã¾ã">Thank you for booking the Dashi & Sushi Experience</p>
+
+                <!-- Booking Details Card -->
+                <div class="booking-details-card">
+                    <div class="detail-row">
+                        <span class="detail-label" data-en="Date" data-jp="æ¥ä»">Date</span>
+                        <span class="detail-value" id="detailDate">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label" data-en="Name" data-jp="åå">Name</span>
+                        <span class="detail-value" id="detailName">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label" data-en="Email" data-jp="ã¡ã¼ã«">Email</span>
+                        <span class="detail-value" id="detailEmail">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label" data-en="Adults" data-jp="å¤§äºº">Adults</span>
+                        <span class="detail-value" id="detailAdults">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label" data-en="Children" data-jp="å­ã©ã">Children</span>
+                        <span class="detail-value" id="detailChildren">-</span>
+                    </div>
+                    <div class="detail-row total">
+                        <span class="detail-label" data-en="Total Amount" data-jp="åè¨éé¡">Total Amount</span>
+                        <span class="detail-value" id="detailTotal">-</span>
+                    </div>
+                </div>
+
+                <!-- Confirmation Message -->
+                <p class="confirmation-message" data-en="A confirmation email has been sent" data-jp="ç¢ºèªã¡ã¼ã«ãéä¿¡ãã¾ãã">A confirmation email has been sent</p>
+
+                <!-- Home Button -->
+                <a href="index.html" class="button button-primary" data-en="Back to Home" data-jp="ãã¼ã ã«æ»ã">Back to Home</a>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="error-state" style="display: none;">
+                <div class="error-icon">â </div>
+                <h1 class="error-title" data-en="Something Went Wrong" data-jp="ã¨ã©ã¼ãçºçãã¾ãã">Something Went Wrong</h1>
+                <p class="error-message" id="errorMessage">-</p>
+                <button class="button button-secondary" onclick="location.reload()" data-en="Try Again" data-jp="ããä¸åº¦è©¦ã">Try Again</button>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p class="footer-copyright">Â© b hotel â Koban-dori Goju (äº¤çªéãäºå)</p>
+                <a href="privacy.html" class="footer-link" data-en="Privacy Policy" data-jp="ãã©ã¤ãã·ã¼ããªã·ã¼">Privacy Policy</a>
+            </div>
+        </footer>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('session_id');
+            const lang = urlParams.get('lang');
+
+            // Set language if provided
+            if (lang) {
+                localStorage.setItem('lang', lang);
+            }
+
+            // Initialize language
+            updatePageLanguage();
+
+            if (!sessionId) {
+                showErrorState('Session ID not found');
+                return;
+            }
+
+            try {
+                const response = await confirmBooking(sessionId);
+                showSuccessState(response);
+            } catch (error) {
+                showErrorState(error.message || 'Failed to confirm booking');
+            }
+        });
+
+        function showSuccessState(bookingData) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+            document.getElementById('successState').style.display = 'block';
+
+            // Populate booking details
+            document.getElementById('detailDate').textContent = formatDate(bookingData.date);
+            document.getElementById('detailName').textContent = bookingData.name;
+            document.getElementById('detailEmail').textContent = bookingData.email;
+            document.getElementById('detailAdults').textContent = bookingData.adults;
+            document.getElementById('detailChildren').textContent = bookingData.children;
+            document.getElementById('detailTotal').textContent = formatCurrency(bookingData.total_amount);
+        }
+
+        function showErrorState(message) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('successState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        function formatCurrency(amount) {
+            return 'Â¥' + Math.floor(amount).toLocaleString('ja-JP');
+        }
+
+        function updatePageLanguage() {
+            const lang = getLang();
+            document.querySelectorAll('[data-en][data-jp]').forEach(element => {
+                const text = lang === 'en' ? element.getAttribute('data-en') : element.getAttribute('data-jp');
+                if (!element.hasAttribute('id')) {
+                    element.textContent = text;
+                } else {
+                    // For elements with IDs, only update if they don't have dynamic content
+                    if (!element.textContent || element.textContent === element.getAttribute('data-en') || element.textContent === element.getAttribute('data-jp')) {
+                        element.textContent = text;
+                    }
+                }
+            });
+            document.documentElement.lang = lang;
+        }
+
+        document.getElementById('langToggle').addEventListener('click', function() {
+            const currentLang = getLang();
+            const newLang = currentLang === 'en' ? 'jp' : 'en';
+            localStorage.setItem('lang', newLang);
+            updatePageLanguage();
+        });
+    </script>
+</body>
+</html>
